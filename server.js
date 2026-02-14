@@ -102,6 +102,207 @@ app.post("/generateSideQuest", async (req, res) => {
         res.json({ success: false });
     }
 });
+app.get("/plants/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const plants = await query(
+            "SELECT * FROM user_plants WHERE user_id = ?",
+            [user_id]
+        );
+        res.json(plants);
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/plant", async (req, res) => {
+    const { user_id, plant_type, grow_time } = req.body;
+
+    const planted_at = new Date();
+    const ready_at = new Date(Date.now() + grow_time * 1000);
+
+    try {
+        await query(
+            "INSERT INTO user_plants (user_id, plant_type, planted_at, ready_at, status) VALUES (?, ?, ?, ?, 'growing')",
+            [user_id, plant_type, planted_at, ready_at]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/harvest", async (req, res) => {
+    const { plant_id, user_id, item, amount } = req.body;
+
+    try {
+        // удалить растение
+        await query("DELETE FROM user_plants WHERE id = ?", [plant_id]);
+
+        // добавить в инвентарь
+        await query(
+            "INSERT INTO user_inventory (user_id, item, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = amount + ?",
+            [user_id, item, amount, amount]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.get("/updatePlants/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        await query(
+            "UPDATE user_plants SET status = 'ready' WHERE user_id = ? AND ready_at <= NOW()",
+            [user_id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.get("/animals/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const animals = await query(
+            "SELECT * FROM user_animals WHERE user_id = ?",
+            [user_id]
+        );
+        res.json(animals);
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/buyAnimal", async (req, res) => {
+    const { user_id, animal_type, produce_time } = req.body;
+
+    const now = new Date();
+    const ready_at = new Date(Date.now() + produce_time * 1000);
+
+    try {
+        await query(
+            "INSERT INTO user_animals (user_id, animal_type, last_produced_at, ready_at, status) VALUES (?, ?, ?, ?, 'producing')",
+            [user_id, animal_type, now, ready_at]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/collectAnimalProduct", async (req, res) => {
+    const { animal_id, user_id, item, amount, produce_time } = req.body;
+
+    const now = new Date();
+    const next_ready = new Date(Date.now() + produce_time * 1000);
+
+    try {
+        // обновить животное
+        await query(
+            "UPDATE user_animals SET last_produced_at = ?, ready_at = ?, status = 'producing' WHERE id = ?",
+            [now, next_ready, animal_id]
+        );
+
+        // добавить в инвентарь
+        await query(
+            "INSERT INTO user_inventory (user_id, item, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = amount + ?",
+            [user_id, item, amount, amount]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.get("/updateAnimals/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        await query(
+            "UPDATE user_animals SET status = 'ready' WHERE user_id = ? AND ready_at <= NOW()",
+            [user_id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.get("/energy/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const user = await query("SELECT energy, max_energy FROM users WHERE id = ?", [user_id]);
+        res.json(user[0]);
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/energy/spend", async (req, res) => {
+    const { user_id, amount } = req.body;
+
+    try {
+        const user = await query("SELECT energy FROM users WHERE id = ?", [user_id]);
+
+        if (user[0].energy < amount) {
+            return res.json({ success: false, message: "Недостаточно энергии" });
+        }
+
+        await query(
+            "UPDATE users SET energy = energy - ? WHERE id = ?",
+            [amount, user_id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/energy/restore", async (req, res) => {
+    const { user_id, amount } = req.body;
+
+    try {
+        await query(
+            "UPDATE users SET energy = LEAST(energy + ?, max_energy) WHERE id = ?",
+            [amount, user_id]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.get("/energy/update/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        await query(`
+            UPDATE users 
+            SET energy = LEAST(max_energy, energy + 1)
+            WHERE id = ? AND energy < max_energy
+        `, [user_id]);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
 app.listen(3000, () => {
     console.log("Fun Farm server running on port 3000");
 });
