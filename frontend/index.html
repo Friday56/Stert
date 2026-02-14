@@ -1,223 +1,258 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>🌾 Ферма Артёма — МЕГА ИГРА 🐄</title>
-
-<style>
-body {
-    font-family: sans-serif;
-    margin: 0;
-    padding: 10px;
-    background: linear-gradient(#dfffd8, #ffffff);
-}
-
-h2, h3 {
-    text-align: center;
-}
-
-.card {
-    background: white;
-    padding: 12px;
-    border-radius: 10px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-input, button {
-    width: 100%;
-    padding: 12px;
-    margin: 6px 0;
-    font-size: 18px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-button {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    transition: 0.2s;
-}
-
-button:hover {
-    background: #45a049;
-    transform: scale(1.05);
-}
-
-#hud {
-    background: #fff;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Fun Farm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f7e8;
+            padding: 20px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .block {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 5px #ccc;
+        }
+        input {
+            padding: 5px;
+            margin: 5px;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
-
 <body>
 
-<h2>🌾 Ферма Артёма — МЕГА ИГРА 🐄</h2>
-<p style="text-align:center;">Добро пожаловать в деревню «Зелёная Долина»!</p>
+<h1>Fun Farm — Панель управления</h1>
 
-<!-- AUTH -->
-<div id="auth">
-    <input id="nick" placeholder="Никнейм">
-    <input id="pass" type="password" placeholder="Пароль">
-    <button onclick="register()">📝 Регистрация</button>
-    <button onclick="login()">🔑 Вход</button>
+<div class="block">
+    <h2>Создать пользователя</h2>
+    <input id="username" placeholder="Имя игрока">
+    <button onclick="createUser()">Создать</button>
+    <pre id="createUserResult"></pre>
 </div>
 
-<!-- GAME -->
-<div id="game" style="display:none;">
+<div class="block">
+    <h2>Профиль игрока</h2>
+    <input id="userId" placeholder="ID игрока">
+    <button onclick="loadProfile()">Загрузить профиль</button>
+    <pre id="profile"></pre>
+</div>
 
-    <!-- HUD -->
-    <div id="hud">
-        <b>Уровень:</b> <span id="lvl">1</span> ⭐<br>
-        <b>Опыт:</b> <span id="xp">0</span>/100 🎯<br>
-        <b>Энергия:</b> <span id="energy">20</span>/20 ⚡
-    </div>
+<div class="block">
+    <h2>Энергия</h2>
+    <button onclick="getEnergy()">Показать энергию</button>
+    <button onclick="restoreEnergy()">+5 энергии</button>
+    <button onclick="updateEnergy()">Авто-восстановление</button>
+    <pre id="energy"></pre>
+</div>
 
-    <h3>📦 Инвентарь</h3>
-    <div id="inv"></div>
+<div class="block">
+    <h2>XP и уровни</h2>
+    <button onclick="getXP()">Показать XP</button>
+    <button onclick="addXP()">+20 XP</button>
+    <pre id="xp"></pre>
+</div>
 
-    <h3>🛒 Магазин</h3>
-    <button onclick="buy(1, 10)">🌾 Купить 10 кг семян</button>
-    <button onclick="buy(2, 10)">🟩 Купить 10 кг сена</button>
-    <button onclick="buy(3, 1)">🐔 Купить курицу</button>
-    <button onclick="buy(4, 1)">🐄 Купить корову</button>
+<div class="block">
+    <h2>Растения</h2>
+    <button onclick="plant()">Посадить пшеницу</button>
+    <button onclick="loadPlants()">Показать растения</button>
+    <button onclick="updatePlants()">Обновить статус</button>
+    <pre id="plants"></pre>
+</div>
 
-    <h3>🌱 Посевы</h3>
-    <button onclick="plant()">🌿 Посадить пшеницу (1 семя)</button>
-    <div id="plants"></div>
+<div class="block">
+    <h2>Животные</h2>
+    <button onclick="buyAnimal()">Купить курицу</button>
+    <button onclick="loadAnimals()">Показать животных</button>
+    <button onclick="updateAnimals()">Обновить статус</button>
+    <pre id="animals"></pre>
+</div>
 
-    <h3>🐔 Животные</h3>
-    <button onclick="feed()">🍀 Покормить животных</button>
-    <div id="animals"></div>
+<div class="block">
+    <h2>Случайные квесты</h2>
+    <button onclick="generateSideQuest()">Создать квест</button>
+    <pre id="sideQuest"></pre>
+</div>
 
-    <h3>🎯 Квесты</h3>
-    <div id="quests"></div>
-
+<div class="block">
+    <h2>Сюжетный квест</h2>
+    <button onclick="loadStory()">Показать текущий шаг</button>
+    <button onclick="completeStoryStep()">Завершить шаг</button>
+    <button onclick="claimStoryReward()">Получить награду</button>
+    <pre id="story"></pre>
 </div>
 
 <script>
-let token = null;
-const API = "https://stert.onrender.com";
+const API = "http://localhost:3000";
 
-// Эмодзи
-const EMOJI = {
-    "Семена пшеницы": "🌾",
-    "Сено": "🟩",
-    "Курица": "🐔",
-    "Корова": "🐄",
-    "Пшеница": "🌿",
-    "Яйца": "🥚",
-    "Молоко": "🥛"
-};
-
-// ------------------- REGISTER -------------------
-async function register() {
-    const r = await fetch(API + "/register", {
+// Создание пользователя
+async function createUser() {
+    const username = document.getElementById("username").value;
+    const res = await fetch(API + "/createUser", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ nickname: nick.value, password: pass.value })
+        body: JSON.stringify({username})
     });
-
-    const data = await r.json();
-
-    if (data.ok) {
-        alert("Ты прибыл в деревню «Зелёная Долина»! 🌱🐔\nТебя ждёт великая фермерская судьба!");
-    } else {
-        alert("Ошибка: ник занят ❌");
-    }
+    document.getElementById("createUserResult").textContent = await res.text();
 }
 
-// ------------------- LOGIN -------------------
-async function login() {
-    const r = await fetch(API + "/login", {
+// Профиль
+async function loadProfile() {
+    const id = document.getElementById("userId").value;
+    const res = await fetch(API + "/profile/" + id);
+    document.getElementById("profile").textContent = await res.text();
+}
+
+// Энергия
+async function getEnergy() {
+    const id = userId.value;
+    const res = await fetch(API + "/energy/" + id);
+    energy.textContent = await res.text();
+}
+
+async function restoreEnergy() {
+    const id = userId.value;
+    const res = await fetch(API + "/energy/restore", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ nickname: nick.value, password: pass.value })
+        body: JSON.stringify({user_id: id, amount: 5})
     });
-
-    const data = await r.json();
-
-    if (data.ok) {
-        token = data.token;
-        auth.style.display = "none";
-        game.style.display = "block";
-
-        alert("Добро пожаловать обратно, фермер! 🐄🌾");
-
-        loadInv();
-        loadQuests();
-        loadAnimals();
-        loadPlants();
-    } else {
-        alert("Неверный логин или пароль ❌");
-    }
+    energy.textContent = await res.text();
 }
 
-// ------------------- INVENTORY -------------------
-async function loadInv() {
-    const r = await fetch(API + "/inventory", {
-        headers: { Authorization: token }
-    });
-
-    const items = await r.json();
-
-    inv.innerHTML = items.map(i => `
-        <div class="card">
-            <b>${EMOJI[i.name] || "📦"} ${i.name}</b><br>
-            Количество: <b>${i.quantity}</b>
-        </div>
-    `).join("");
+async function updateEnergy() {
+    const id = userId.value;
+    const res = await fetch(API + "/energy/update/" + id);
+    energy.textContent = await res.text();
 }
 
-// ------------------- BUY -------------------
-async function buy(item_id, qty) {
-    await fetch(API + "/buy-basic", {
+// XP
+async function getXP() {
+    const id = userId.value;
+    const res = await fetch(API + "/xp/" + id);
+    xp.textContent = await res.text();
+}
+
+async function addXP() {
+    const id = userId.value;
+    const res = await fetch(API + "/xp/add", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: token
-        },
-        body: JSON.stringify({ item_id, quantity: qty })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({user_id: id, amount: 20})
     });
-
-    loadInv();
+    xp.textContent = await res.text();
 }
 
-// ------------------- PLANTS -------------------
-function plant() {
-    alert("🌱 Ты посадил пшеницу! Она вырастет через 1 минуту.");
-    plants.innerHTML = "<div class='card'>🌿 Пшеница растёт... (60 сек)</div>";
+// Растения
+async function plant() {
+    const id = userId.value;
+    const res = await fetch(API + "/plant", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: id,
+            plant_type: "Пшеница",
+            grow_time: 10
+        })
+    });
+    plants.textContent = await res.text();
 }
 
-// ------------------- ANIMALS -------------------
-function feed() {
-    alert("🐔 Животные накормлены! Через 1 минуту появятся ресурсы.");
-    animals.innerHTML = "<div class='card'>🐄 Животные сыты и счастливы!</div>";
+async function loadPlants() {
+    const id = userId.value;
+    const res = await fetch(API + "/plants/" + id);
+    plants.textContent = await res.text();
 }
 
-// ------------------- QUESTS -------------------
-function loadQuests() {
-    quests.innerHTML = `
-        <div class="card">🎯 Квест: Купи курицу 🐔</div>
-        <div class="card">🎯 Квест: Собери 10 яиц 🥚</div>
-        <div class="card">🎯 Квест: Вырасти пшеницу 🌿</div>
-    `;
+async function updatePlants() {
+    const id = userId.value;
+    const res = await fetch(API + "/updatePlants/" + id);
+    plants.textContent = await res.text();
 }
 
-function loadAnimals() {
-    animals.innerHTML = "<div class='card'>🐔 Курицы: 0<br>🐄 Коровы: 0</div>";
+// Животные
+async function buyAnimal() {
+    const id = userId.value;
+    const res = await fetch(API + "/buyAnimal", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: id,
+            animal_type: "Курица",
+            produce_time: 10
+        })
+    });
+    animals.textContent = await res.text();
 }
 
-function loadPlants() {
-    plants.innerHTML = "<div class='card'>🌱 Посевов пока нет</div>";
+async function loadAnimals() {
+    const id = userId.value;
+    const res = await fetch(API + "/animals/" + id);
+    animals.textContent = await res.text();
+}
+
+async function updateAnimals() {
+    const id = userId.value;
+    const res = await fetch(API + "/updateAnimals/" + id);
+    animals.textContent = await res.text();
+}
+
+// Побочные квесты
+async function generateSideQuest() {
+    const id = userId.value;
+    const res = await fetch(API + "/generateSideQuest", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({user_id: id})
+    });
+    sideQuest.textContent = await res.text();
+}
+
+// Сюжет
+async function loadStory() {
+    const id = userId.value;
+    const res = await fetch(API + "/story/" + id);
+    story.textContent = await res.text();
+}
+
+async function completeStoryStep() {
+    const id = userId.value;
+    const res = await fetch(API + "/story/completeStep", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({user_id: id})
+    });
+    story.textContent = await res.text();
+}
+
+async function claimStoryReward() {
+    const id = userId.value;
+    const res = await fetch(API + "/story/claimReward", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({user_id: id})
+    });
+    story.textContent = await res.text();
 }
 </script>
 
 </body>
-        </html>
+                                                  </html>
