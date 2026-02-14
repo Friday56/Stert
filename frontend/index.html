@@ -1,1 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm P2P</title>
 
+<style>
+    body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 10px;
+        background: #f2f2f2;
+    }
+    h2, h3 {
+        text-align: center;
+    }
+    input, button {
+        width: 100%;
+        padding: 12px;
+        margin: 6px 0;
+        font-size: 18px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+    button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+    }
+    .card {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 6px 0;
+        border: 1px solid #ddd;
+    }
+</style>
+</head>
+
+<body>
+
+<h2>Farm P2P</h2>
+
+<!-- Авторизация -->
+<div id="auth">
+    <input id="nick" placeholder="Никнейм">
+    <input id="pass" type="password" placeholder="Пароль">
+    <button onclick="register()">Регистрация</button>
+    <button onclick="login()">Вход</button>
+</div>
+
+<!-- Игра -->
+<div id="game" style="display:none;">
+    <h3>Инвентарь</h3>
+    <div id="inv"></div>
+
+    <h3>Купить семена / сено</h3>
+    <button onclick="buy(1, 10)">Купить 10 кг семян пшеницы (0.1/кг)</button>
+    <button onclick="buy(2, 10)">Купить 10 кг сена (0.5/кг)</button>
+</div>
+
+<script>
+let token = null;
+
+// Твой backend Render
+const API = "https://stert.onrender.com";
+
+// ------------------ Регистрация ------------------
+async function register() {
+    const r = await fetch(API + "/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nickname: nick.value,
+            password: pass.value
+        })
+    });
+
+    const data = await r.json();
+    if (data.ok) {
+        alert("Регистрация успешна");
+    } else {
+        alert("Ошибка: ник занят");
+    }
+}
+
+// ------------------ Логин ------------------
+async function login() {
+    const r = await fetch(API + "/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nickname: nick.value,
+            password: pass.value
+        })
+    });
+
+    const data = await r.json();
+
+    if (data.ok) {
+        token = data.token;
+        auth.style.display = "none";
+        game.style.display = "block";
+        loadInv();
+    } else {
+        alert("Неверный логин или пароль");
+    }
+}
+
+// ------------------ Загрузка инвентаря ------------------
+async function loadInv() {
+    const r = await fetch(API + "/inventory", {
+        headers: { Authorization: token }
+    });
+
+    const items = await r.json();
+
+    inv.innerHTML = items
+        .map(i => `<div class="card">${i.name}: ${i.quantity}</div>`)
+        .join("");
+}
+
+// ------------------ Покупка на базовом рынке ------------------
+async function buy(item_id, qty) {
+    await fetch(API + "/buy-basic", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+        },
+        body: JSON.stringify({ item_id, quantity: qty })
+    });
+
+    loadInv();
+}
+</script>
+
+</body>
+  </html>
