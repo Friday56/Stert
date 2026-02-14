@@ -2,97 +2,143 @@
 <html lang="ru">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Farm P2P</title>
+<title>🌾 Ферма Артёма — МЕГА ИГРА 🐄</title>
 
 <style>
-    body {
-        font-family: sans-serif;
-        margin: 0;
-        padding: 10px;
-        background: #f2f2f2;
-    }
-    h2, h3 {
-        text-align: center;
-    }
-    input, button {
-        width: 100%;
-        padding: 12px;
-        margin: 6px 0;
-        font-size: 18px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-    }
-    button {
-        background: #4CAF50;
-        color: white;
-        border: none;
-    }
-    .card {
-        background: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 6px 0;
-        border: 1px solid #ddd;
-    }
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 10px;
+    background: linear-gradient(#dfffd8, #ffffff);
+}
+
+h2, h3 {
+    text-align: center;
+}
+
+.card {
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #45a049;
+    transform: scale(1.05);
+}
+
+#hud {
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Farm P2P</h2>
+<h2>🌾 Ферма Артёма — МЕГА ИГРА 🐄</h2>
+<p style="text-align:center;">Добро пожаловать в деревню «Зелёная Долина»!</p>
 
-<!-- Авторизация -->
+<!-- AUTH -->
 <div id="auth">
     <input id="nick" placeholder="Никнейм">
     <input id="pass" type="password" placeholder="Пароль">
-    <button onclick="register()">Регистрация</button>
-    <button onclick="login()">Вход</button>
+    <button onclick="register()">📝 Регистрация</button>
+    <button onclick="login()">🔑 Вход</button>
 </div>
 
-<!-- Игра -->
+<!-- GAME -->
 <div id="game" style="display:none;">
-    <h3>Инвентарь</h3>
+
+    <!-- HUD -->
+    <div id="hud">
+        <b>Уровень:</b> <span id="lvl">1</span> ⭐<br>
+        <b>Опыт:</b> <span id="xp">0</span>/100 🎯<br>
+        <b>Энергия:</b> <span id="energy">20</span>/20 ⚡
+    </div>
+
+    <h3>📦 Инвентарь</h3>
     <div id="inv"></div>
 
-    <h3>Купить семена / сено</h3>
-    <button onclick="buy(1, 10)">Купить 10 кг семян пшеницы (0.1/кг)</button>
-    <button onclick="buy(2, 10)">Купить 10 кг сена (0.5/кг)</button>
+    <h3>🛒 Магазин</h3>
+    <button onclick="buy(1, 10)">🌾 Купить 10 кг семян</button>
+    <button onclick="buy(2, 10)">🟩 Купить 10 кг сена</button>
+    <button onclick="buy(3, 1)">🐔 Купить курицу</button>
+    <button onclick="buy(4, 1)">🐄 Купить корову</button>
+
+    <h3>🌱 Посевы</h3>
+    <button onclick="plant()">🌿 Посадить пшеницу (1 семя)</button>
+    <div id="plants"></div>
+
+    <h3>🐔 Животные</h3>
+    <button onclick="feed()">🍀 Покормить животных</button>
+    <div id="animals"></div>
+
+    <h3>🎯 Квесты</h3>
+    <div id="quests"></div>
+
 </div>
 
 <script>
 let token = null;
-
-// Твой backend Render
 const API = "https://stert.onrender.com";
 
-// ------------------ Регистрация ------------------
+// Эмодзи
+const EMOJI = {
+    "Семена пшеницы": "🌾",
+    "Сено": "🟩",
+    "Курица": "🐔",
+    "Корова": "🐄",
+    "Пшеница": "🌿",
+    "Яйца": "🥚",
+    "Молоко": "🥛"
+};
+
+// ------------------- REGISTER -------------------
 async function register() {
     const r = await fetch(API + "/register", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nickname: nick.value,
-            password: pass.value
-        })
+        body: JSON.stringify({ nickname: nick.value, password: pass.value })
     });
 
     const data = await r.json();
+
     if (data.ok) {
-        alert("Регистрация успешна");
+        alert("Ты прибыл в деревню «Зелёная Долина»! 🌱🐔\nТебя ждёт великая фермерская судьба!");
     } else {
-        alert("Ошибка: ник занят");
+        alert("Ошибка: ник занят ❌");
     }
 }
 
-// ------------------ Логин ------------------
+// ------------------- LOGIN -------------------
 async function login() {
     const r = await fetch(API + "/login", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nickname: nick.value,
-            password: pass.value
-        })
+        body: JSON.stringify({ nickname: nick.value, password: pass.value })
     });
 
     const data = await r.json();
@@ -101,13 +147,19 @@ async function login() {
         token = data.token;
         auth.style.display = "none";
         game.style.display = "block";
+
+        alert("Добро пожаловать обратно, фермер! 🐄🌾");
+
         loadInv();
+        loadQuests();
+        loadAnimals();
+        loadPlants();
     } else {
-        alert("Неверный логин или пароль");
+        alert("Неверный логин или пароль ❌");
     }
 }
 
-// ------------------ Загрузка инвентаря ------------------
+// ------------------- INVENTORY -------------------
 async function loadInv() {
     const r = await fetch(API + "/inventory", {
         headers: { Authorization: token }
@@ -115,12 +167,15 @@ async function loadInv() {
 
     const items = await r.json();
 
-    inv.innerHTML = items
-        .map(i => `<div class="card">${i.name}: ${i.quantity}</div>`)
-        .join("");
+    inv.innerHTML = items.map(i => `
+        <div class="card">
+            <b>${EMOJI[i.name] || "📦"} ${i.name}</b><br>
+            Количество: <b>${i.quantity}</b>
+        </div>
+    `).join("");
 }
 
-// ------------------ Покупка на базовом рынке ------------------
+// ------------------- BUY -------------------
 async function buy(item_id, qty) {
     await fetch(API + "/buy-basic", {
         method: "POST",
@@ -133,7 +188,36 @@ async function buy(item_id, qty) {
 
     loadInv();
 }
+
+// ------------------- PLANTS -------------------
+function plant() {
+    alert("🌱 Ты посадил пшеницу! Она вырастет через 1 минуту.");
+    plants.innerHTML = "<div class='card'>🌿 Пшеница растёт... (60 сек)</div>";
+}
+
+// ------------------- ANIMALS -------------------
+function feed() {
+    alert("🐔 Животные накормлены! Через 1 минуту появятся ресурсы.");
+    animals.innerHTML = "<div class='card'>🐄 Животные сыты и счастливы!</div>";
+}
+
+// ------------------- QUESTS -------------------
+function loadQuests() {
+    quests.innerHTML = `
+        <div class="card">🎯 Квест: Купи курицу 🐔</div>
+        <div class="card">🎯 Квест: Собери 10 яиц 🥚</div>
+        <div class="card">🎯 Квест: Вырасти пшеницу 🌿</div>
+    `;
+}
+
+function loadAnimals() {
+    animals.innerHTML = "<div class='card'>🐔 Курицы: 0<br>🐄 Коровы: 0</div>";
+}
+
+function loadPlants() {
+    plants.innerHTML = "<div class='card'>🌱 Посевов пока нет</div>";
+}
 </script>
 
 </body>
-  </html>
+        </html>
