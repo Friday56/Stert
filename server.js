@@ -303,6 +303,78 @@ app.get("/energy/update/:user_id", async (req, res) => {
         res.json({ success: false });
     }
 });
+const LEVELS = [
+    { level: 1, xp_required: 0 },
+    { level: 2, xp_required: 50 },
+    { level: 3, xp_required: 120 },
+    { level: 4, xp_required: 250 },
+    { level: 5, xp_required: 500 },
+    { level: 6, xp_required: 900 },
+    { level: 7, xp_required: 1500 }
+];
+app.get("/xp/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const user = await query(
+            "SELECT xp, level FROM users WHERE id = ?",
+            [user_id]
+        );
+
+        res.json(user[0]);
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+function checkLevelUp(currentXP) {
+    let newLevel = 1;
+
+    for (let lvl of LEVELS) {
+        if (currentXP >= lvl.xp_required) {
+            newLevel = lvl.level;
+        }
+    }
+
+    return newLevel;
+            }
+app.post("/xp/add", async (req, res) => {
+    const { user_id, amount } = req.body;
+
+    try {
+        // получить текущий XP
+        const user = await query(
+            "SELECT xp, level FROM users WHERE id = ?",
+            [user_id]
+        );
+
+        const newXP = user[0].xp + amount;
+        const newLevel = checkLevelUp(newXP);
+
+        // обновить XP
+        await query(
+            "UPDATE users SET xp = ?, level = ? WHERE id = ?",
+            [newXP, newLevel, user_id]
+        );
+
+        res.json({
+            success: true,
+            xp: newXP,
+            level: newLevel,
+            level_up: newLevel > user[0].level
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+// пример вызова
+await fetch("/xp/add", {
+    method: "POST",
+    body: JSON.stringify({ user_id, amount: 10 })
+});
+
 app.listen(3000, () => {
     console.log("Fun Farm server running on port 3000");
 });
