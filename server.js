@@ -374,6 +374,142 @@ await fetch("/xp/add", {
     method: "POST",
     body: JSON.stringify({ user_id, amount: 10 })
 });
+const STORY_QUESTS = [
+    {
+        chapter: 1,
+        quest_id: 1,
+        title: "Добро пожаловать в Зелёную Долину",
+        steps: [
+            { id: 1, type: "talk", npc: "Bed MaZai" },
+            { id: 2, type: "buy", item: "Курица", amount: 1 },
+            { id: 3, type: "collect", item: "Яйца", amount: 3 },
+            { id: 4, type: "plant", item: "Пшеница", amount: 1 }
+        ],
+        reward_xp: 50,
+        reward_coins: 100,
+        reward_gems: 1
+    }
+];
+app.get("/story/:user_id", async (req, res) => {
+    const { user_id } = req.params;
+
+    try {
+        const progress = await query(
+            "SELECT * FROM story_progress WHERE user_id = ?",
+            [user_id]
+        );
+
+        if (progress.length === 0) {
+            // если игрок впервые — создаём прогресс
+            await query(
+                "INSERT INTO story_progress (user_id, chapter, quest_id, step_id, status) VALUES (?, 1, 1, 1, 'active')",
+                [user_id]
+            );
+
+            return res.json({
+                chapter: 1,
+                quest_id: 1,
+                step_id: 1,
+                step: STORY_QUESTS[0].steps[0]
+            });
+        }
+
+        const p = progress[0];
+        const quest = STORY_QUESTS.find(q => q.quest_id === p.quest_id);
+        const step = quest.steps.find(s => s.id === p.step_id);
+
+        res.json({
+            chapter: p.chapter,
+            quest_id: p.quest_id,
+            step_id: p.step_id,
+            step
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/story/completeStep", async (req, res) => {
+    const { user_id } = req.body;
+
+    try {
+        const progress = await query(
+            "SELECT * FROM story_progress WHERE user_id = ?",
+            [user_id]
+        );
+
+        const p = progress[0];
+        const quest = STORY_QUESTS.find(q => q.quest_id === p.quest_id);
+
+        const nextStep = p.step_id + 1;
+
+        if (nextStep > quest.steps.length) {
+            // квест завершён
+            await query(
+                "UPDATE story_progress SET status = 'completed' WHERE user_id = ?",
+                [user_id]
+            );
+
+            return res.json({ success: true, completed: true });
+        }
+
+        // перейти к следующему шагу
+        await query(
+            "UPDATE story_progress SET step_id = ? WHERE user_id = ?",
+            [nextStep, user_id]
+        );
+
+        res.json({ success: true, next_step: nextStep });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
+app.post("/story/claimReward", async (req, res) => {
+    const { user_id } = req.body;
+
+    try {
+        const progress = await query(
+            "SELECT * FROM story_progress WHERE user_id = ?",
+            [user_id]
+        );
+
+        const p = progress[0];
+
+        if (p.status !== "completed") {
+            return res.json({ success: false, message: "Квест ещё не завершён" });
+        }
+
+        const quest = STORY_QUESTS.find(q => q.quest_id === p.quest_id);
+
+        // начислить награду
+        await query(
+            "UPDATE users SET coins = coins + ?, gems = gems + ?, xp = xp + ? WHERE id = ?",
+            [quest.reward_coins, quest.reward_gems, quest.reward_xp, user_id]
+        );
+
+        // отметить награду как полученную
+        await query(
+            "UPDATE story_progress SET status = 'claimed' WHERE user_id = ?",
+            [user_id]
+        );
+
+        res.json({
+            success: true,
+            reward: {
+                coins: quest.reward_coins,
+                gems: quest.reward_gems,
+                xp: quest.reward_xp
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false });
+    }
+});
 
 app.listen(3000, () => {
     console.log("Fun Farm server running on port 3000");
