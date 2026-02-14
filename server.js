@@ -8,13 +8,71 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Render PostgreSQL
+// Render PostgreSQL (EXTERNAL URL)
 const db = new pg.Pool({
     connectionString: "postgresql://db_farm_user:xjotQ7ALuIKcgV3ahcrM1lmnxipRz4BL@dpg-d67v226sb7us73c0nvhg-a.oregon-postgres.render.com/db_farm",
     ssl: { rejectUnauthorized: false }
 });
 
 const JWT_SECRET = "supersecret";
+
+// ------------------- AUTO DB INIT -------------------
+
+async function initDB() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                nickname TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS items (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                base_price NUMERIC NOT NULL,
+                production_time INT DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS inventory (
+                id SERIAL PRIMARY KEY,
+                user_id INT REFERENCES users(id),
+                item_id INT REFERENCES items(id),
+                quantity NUMERIC DEFAULT 0,
+                UNIQUE(user_id, item_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS market (
+                id SERIAL PRIMARY KEY,
+                seller_id INT REFERENCES users(id),
+                item_id INT REFERENCES items(id),
+                price NUMERIC NOT NULL,
+                quantity NUMERIC NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
+        await db.query(`
+            INSERT INTO items (name, type, base_price, production_time) VALUES
+            ('Семена пшеницы', 'seed', 0.1, 60),
+            ('Сено', 'resource', 0.5, 0),
+            ('Курица', 'animal', 5, 3600),
+            ('Корова', 'animal', 20, 7200),
+            ('Пшеница', 'crop', 1, 0),
+            ('Яйца', 'product', 2, 0),
+            ('Молоко', 'product', 4, 0)
+            ON CONFLICT DO NOTHING;
+        `);
+
+        console.log("DATABASE INITIALIZED ✔");
+    } catch (err) {
+        console.error("DB INIT ERROR:", err);
+    }
+}
+
+initDB();
 
 // ------------------- AUTH -------------------
 
@@ -29,7 +87,8 @@ app.post("/register", async (req, res) => {
             [nickname, hash]
         );
         res.json({ ok: true });
-    } catch {
+    } catch (err) {
+        console.log(err);
         res.json({ ok: false, error: "Nickname already exists" });
     }
 });
@@ -132,6 +191,6 @@ app.post("/market/buy", auth, async (req, res) => {
     res.json({ ok: true });
 });
 
-// ------------------- START -------------------
+// ------------------- START SERVER -------------------
 
-app.listen(3000, () => console.log("Server running"));
+app.listen(3000, () => console.log("Server running on port 3000"));
